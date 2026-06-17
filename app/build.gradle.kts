@@ -1,7 +1,6 @@
 plugins {
   alias(libs.plugins.android.application)
-  alias(libs.plugins.compose.compiler)
-  alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.ksp)
 }
 
@@ -32,7 +31,9 @@ android {
       buildConfig = false
       shaders = false
     }
-
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.10"
+    }
     packaging {
       resources {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -44,11 +45,21 @@ kotlin {
     jvmToolchain(17)
 }
 
-dependencies {
-  val composeBom = platform(libs.androidx.compose.bom)
-  implementation(composeBom)
-  androidTestImplementation(composeBom)
+configurations.all {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin") {
+            if (requested.name == "kotlin-stdlib-jdk8" || requested.name == "kotlin-stdlib-jdk7") {
+                useVersion("1.9.0")
+            } else if (requested.name == "kotlin-stdlib") {
+                useVersion("2.0.21")
+            } else if (requested.name == "kotlin-reflect") {
+                useVersion("2.0.21")
+            }
+        }
+    }
+}
 
+dependencies {
   // Core Android dependencies
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -60,31 +71,26 @@ dependencies {
 
   // Compose
   implementation(libs.androidx.compose.ui)
-  implementation(libs.androidx.compose.ui.tooling.preview)
+  implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.material3)
-  // Tooling
-  debugImplementation(libs.androidx.compose.ui.tooling)
-  // Instrumented tests
-  androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-  debugImplementation(libs.androidx.compose.ui.test.manifest)
-
-  // Local tests: jUnit, coroutines, Android runner
-  testImplementation(libs.junit)
-  testImplementation(libs.kotlinx.coroutines.test)
-
-  // Instrumented tests: jUnit rules and runners
-  androidTestImplementation(libs.androidx.test.core)
-  androidTestImplementation(libs.androidx.test.ext.junit)
-  androidTestImplementation(libs.androidx.test.runner)
-  androidTestImplementation(libs.androidx.test.espresso.core)
+  implementation(libs.androidx.compose.material.icons.core)
+  implementation(libs.androidx.compose.material.icons.extended)
+  implementation(libs.androidx.compose.foundation)
+  implementation(libs.androidx.compose.foundation.layout)
+  implementation(libs.androidx.compose.runtime)
 
   // Navigation
-  implementation(libs.androidx.navigation3.ui)
-  implementation(libs.androidx.navigation3.runtime)
-  implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+  implementation(libs.androidx.navigation.compose)
 
   // Room
   implementation(libs.androidx.room.runtime)
   implementation(libs.androidx.room.ktx)
   ksp(libs.androidx.room.compiler)
+
+  // Local tests
+  testImplementation(libs.junit)
+  testImplementation(libs.kotlinx.coroutines.test)
+
+  // Force cached versions
+  implementation("androidx.savedstate:savedstate-ktx:1.3.3")
 }
